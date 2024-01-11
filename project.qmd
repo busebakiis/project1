@@ -35,7 +35,7 @@ library(leaflet)
 library(stringr)
 library(wordcloud)
 
-stop <- read.csv("/Users/busebakis/project/stopdata.csv", sep = ",")
+stop <- read.csv("stopdata.csv", sep = ",")
 
 #summary(stop)
 #str(stop)
@@ -136,6 +136,20 @@ stop_eth <- stop |>
 #stop_eth
 
 
+levels(as.factor(stop_eth$ethnic))
+
+stop_eth <- stop_eth |> 
+  mutate(count = case_when(ethnic == "Asian" ~ count*0.17,
+                           ethnic == "Middle Eastern or South Asian"~ count*0.17,
+                           ethnic == "Hispanic/Latino(a)"~ count*0.15,
+                           ethnic == "White"~ count*0.43, 
+                           ethnic == "Black/African American"~ count*0.052,
+                           ethnic == "Multi-racial"~ count*0.08, 
+                           ethnic == "Native American"~ count*0.005,
+                           ethnic == "Pacific Islander"~ count*0.003)
+         )
+  
+  
 ggplot(data=stop_eth, aes(x=age, y=count, fill=ethnic)) + 
   geom_bar(stat="identity") +
   scale_fill_brewer(palette="Blues")
@@ -143,17 +157,19 @@ ggplot(data=stop_eth, aes(x=age, y=count, fill=ethnic)) +
 
 ```
 
-After checking age and gender values, ethnicity of person is investigated. In USA many African American people blame the police officers according to they are becoming suspicious because of their races. But in above plot, it can be see easily the most of the stopped people are white. The only higher rate as white for African American people in between age group as 18-29, but also latinos have same rate in this age group.
+After checking age and gender values, ethnicity of person is investigated. In USA many African American people blame the police officers according to they are becoming suspicious because of their races. However, according to population values of San Francisco, the only 5 % of people are African American in total population, so even if the small population rate, the police officers usually stop African Americans. Furthermore, in the all age groups white people are mostly stopped by police officers, this makes sence since almost half of the population is constructed by the white people. Also, hispanic peoples' rate of population is 15 % and they have larger stopped rate than the other ethnicities. 
+
+
 
 ## Accident Data vs Police Stop Data Trend
 
 To checked is there any relationship between stop rate and crash rate, it was used Traffic Accident data collected from San Francisco government open data library, and corrected date values like Police Stop data.
 
-In below line plot it can be seen that there is no changes in trend of the number of crashes even if in pandemic, it is stationary.
+Even if crash rate is less than the police stop rate, it has similar trend with the stop rate. In beginning of pandemic, the crash rate sharply decreased but after a while it started increase again. May be this trend is affected by seasonality, in beginning of the every year, there is some decreasing.
 
 ```{r}
 
-crash <- read.csv("/Users/busebakis/project/crashes.csv", sep = ",")
+crash <- read.csv("crashes.csv", sep = ",")
 
 crash$collision_datetime <- sub("[[:space:]].*", "", crash$collision_datetime)
 
@@ -182,6 +198,10 @@ colnames(monthly_data) <- c("date", "crash_count", "stop_count")
 
 melt_data <- melt(monthly_data, id = c("date")) 
 #melt_data
+
+ggplot(crash_monthly, aes(x = date, y = count)) + 
+  geom_line() + 
+  scale_color_manual(values = "darkred")
 
 ggplot(melt_data, aes(x = date, y = value)) + 
   geom_line(aes(color = variable, linetype = variable)) + 
@@ -216,7 +236,7 @@ plot_ly(
   )
 ```
 
-In above plot, it can be see that African American people have the highest duration of stop rate, but in Asianss (normal and middle/south eastern) there is a weird situation. Although their average duration is shorter from many other ethnicity but they includes many outliers in higher minutes.
+In above plot, it can be see that African American people have the highest duration of stop rate, but in Asians (normal and middle/south eastern) there is a weird situation. Although their average duration is shorter from many other ethnicity but they includes many outliers in higher minutes.
 
 ```{r}
 
@@ -369,3 +389,11 @@ df4 %>% with(wordcloud(actions_taken, count, max.words = 200, random.order = FAL
     colors = brewer.pal(8, "Dark2")))
 
 ```
+
+
+
+### References
+
+San Francisco, California Population 2024. Worldpopulationreview. https://worldpopulationreview.com/us-cities/san-francisco-ca-population
+
+Police Department Stop Data. DataSF. https://data.sfgov.org/Public-Safety/Police-Department-Stop-Data/ubqf-aqzw/about_data
